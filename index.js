@@ -1,5 +1,7 @@
 import { PluginMeta, PluginEvent, CacheExtension } from '@posthog/plugin-scaffold'
 import type { RequestInfo, RequestInit, Response } from 'node-fetch'
+import originalFetch from 'isomorphic-fetch'
+import fetchBuilder from 'fetch-retry-ts'
 import { createBuffer } from '@posthog/plugin-contrib'
 import { RetryError } from '@posthog/plugin-scaffold'
 
@@ -60,42 +62,21 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 	const method_type = config.MethodType
 	const data = new String('[{\"Comment\": \"\",  \"FeedbackType\": \"' + event.event + '\",  \"ItemId\": \"' + event.properties?.item_id + '\",  \"Timestamp\": \"' + event.timestamp + '\",  \"UserId\": \"' + event.distinct_id + '\"}]')
         
-	//fetch with retry
-	const fetch_retry = async (url, options, n) => {
-	    let error;
-	    for (let i = 0; i < n; i++) {
-
-		try {
-		    response = await fetch(url, options);
-		    if (response === 200) {
-		       return response;
-		    }else{
-		       throw new Error(response)
-		    }
-		} catch (err) {
-		   error = err;     
-		   //1.           
-		   if (i + 1 === n) throw err;
-		}
-	    }
-	    throw error;
-	};
-	let response = fetch_retry(
-		request_url,
-                    {
-                        headers: {
-                            'accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                    body: data                     
-                    },
-		    method_type
-		, 10);
+	const options = {
+	    retries: 3,
+	    retryDelay: 1000,
+	    retryOn: [419, 503, 504],
+	}
+	
+	const fetch = fetchBuilder(originalFetch, options)
 	
 	//fetch
-        /*await fetch(
+        await fetch(
                     url,
                     {
+		    	retryOn: (attempt: number, retries: number, error: Error | null, response: Response | null): boolean => (
+				attempt < retries && (!!error || !response || response.status >= 500)
+		    	),
 			method: method_type,
                         headers: {
                             'accept': 'application/json',
@@ -112,7 +93,7 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 				//Then with the error genereted...
 				.catch((error) => {
 				  console.error('Error:', error);
-				})*/
+				})
 	    
     } else {
         
