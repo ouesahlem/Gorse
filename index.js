@@ -66,28 +66,26 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 	let error
 	
 	for (let i = 0; i < retries; i++) {
-		try {
-		    response = await fetch(
-			  url,
-			    {
-				method: method_type,
-				headers: {
-				    'accept': 'application/json',
-				    'Content-Type': 'application/json'
-				},
-			    body: data
-			    })
-		  if (response === 200) {
-		       return response
-		       console.log(response.status)
-		       console.log(response.statusText)
-		  }else{
-		       throw new Error(response)
-		  }
-		} catch(console.error) {
-			error = console.error
-			if (i + 1 === retries) throw error
-		}
+		await fetch(
+                    url,
+                    {
+			method: method_type,
+                        headers: {
+                            'accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                    body: data
+                        
+                    }
+                ).then((response) => response.json())
+				//Then with the data from the response in JSON...
+				.then((data) => {
+				console.log('Success:', data);
+				})
+				//Then with the error genereted...
+				.catch((error) => {
+				  if (i + 1 === retries) console.error('Error:', error);
+				})
 	}
 	throw error
 	
