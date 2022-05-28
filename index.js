@@ -63,6 +63,7 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 	const data = new String('[{\"Comment\": \"\",  \"FeedbackType\": \"' + event.event + '\",  \"ItemId\": \"' + event.properties?.item_id + '\",  \"Timestamp\": \"' + event.timestamp + '\",  \"UserId\": \"' + event.distinct_id + '\"}]')
 	
 	const retries = 3
+	let error
 	
 	for (let i = 0; i < retries; i++) {
 		try {
@@ -75,19 +76,20 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 				    'Content-Type': 'application/json'
 				},
 			    body: data
-			    }
-		  )
+			    })
 		  if (response === 200) {
 		       return response
 		       console.log(response.status)
 		       console.log(response.statusText)
 		  }else{
 		       throw new Error(response)
-		    }
+		  }
 		} catch(console.error) {
-			if (i + 1 === retries) throw err
+			error = console.error
+			if (i + 1 === retries) throw error
 		}
 	}
+	throw error
 	
 	//fetch
         /*await fetch(
