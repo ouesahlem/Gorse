@@ -61,39 +61,32 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 	const request_url = config.RequestURL
 	const method_type = config.MethodType
 	const data = new String('[{\"Comment\": \"\",  \"FeedbackType\": \"' + event.event + '\",  \"ItemId\": \"' + event.properties?.item_id + '\",  \"Timestamp\": \"' + event.timestamp + '\",  \"UserId\": \"' + event.distinct_id + '\"}]')
-        
-	const options = {
-	    retries: 3,
-	    retryDelay: 1000,
-	    retryOn: [419, 503, 504],
-	}
 	
-	//fetch with retry
-	function fetchRetry(url, options, retries = 3) {
-	  // Return a fetch request
-	  return fetch(
-		  url,
-                    {
-			method: method_type,
-                        headers: {
-                            'accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                    body: data
-                        
-                    }
-	  ).then(res => {
-	    // check if successful. If so, return the response transformed to json
-	    if (res.ok) return res.json()
-	    // if retries > 0, return a call to fetchRetry
-	    if (retries > 0) {
-		return fetchRetry(url, options, retries - 1)
-	      //else, throw error
-	      } else {
-		throw new Error(res)
-	      }
-	    })
-	    .catch(console.error)
+	const retries = 3
+	
+	for (let i = 0; i < retries; i++) {
+		try {
+		    response = await fetch(
+			  url,
+			    {
+				method: method_type,
+				headers: {
+				    'accept': 'application/json',
+				    'Content-Type': 'application/json'
+				},
+			    body: data
+			    }
+		  )
+		  if (response === 200) {
+		       return response
+		       console.log(response.status)
+		       console.log(response.statusText)
+		  }else{
+		       throw new Error(response)
+		    }
+		} catch(console.error) {
+			if (i + 1 === retries) throw err
+		}
 	}
 	
 	//fetch
