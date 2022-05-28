@@ -88,28 +88,6 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 				})
 	}
 	throw error
-	
-	//fetch
-        /*await fetch(
-                    url,
-                    {
-			method: method_type,
-                        headers: {
-                            'accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                    body: data
-                        
-                    }
-                ).then((response) => response.json())
-				//Then with the data from the response in JSON...
-				.then((data) => {
-				console.log('Success:', data);
-				})
-				//Then with the error genereted...
-				.catch((error) => {
-				  console.error('Error:', error);
-				})*/
 	    
     } else {
         
