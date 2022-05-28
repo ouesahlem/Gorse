@@ -61,17 +61,17 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 	const data = new String('[{\"Comment\": \"\",  \"FeedbackType\": \"' + event.event + '\",  \"ItemId\": \"' + event.properties?.item_id + '\",  \"Timestamp\": \"' + event.timestamp + '\",  \"UserId\": \"' + event.distinct_id + '\"}]')
         
 	//fetch
-        await fetch(
+        await fetchWithRetry(
                     url,
                     {
-                        method: method_type,
                         headers: {
                             'accept': 'application/json',
                             'Content-Type': 'application/json'
                         },
                     body: data
                         
-                    }
+                    },
+		    method_type
                 ).then((response) => response.json())
 				//Then with the data from the response in JSON...
 				.then((data) => {
@@ -96,7 +96,7 @@ export async function setupPlugin(meta: SendEventsPluginMeta) {
     const { global } = meta
     global.buffer = createBuffer({
         limit: 5 * 1024 * 1024, // 5 MB
-        timeoutSeconds: 60,
+        timeoutSeconds: 1,
 	onFlush: async (events) => {
 	    const timer1 = new Date().getTime()
 	    for (const event of events) {
