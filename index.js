@@ -71,7 +71,7 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
                     body: data
                         
                     },
-		    method_type
+		    method_type, 5
                 ).then((response) => response.json())
 				//Then with the data from the response in JSON...
 				.then((data) => {
