@@ -56,22 +56,54 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
         metrics.total_requests.increment(1)
         
 	//data
-	const url = config.RequestURL
+	const request_url = config.RequestURL
 	const method_type = config.MethodType
 	const data = new String('[{\"Comment\": \"\",  \"FeedbackType\": \"' + event.event + '\",  \"ItemId\": \"' + event.properties?.item_id + '\",  \"Timestamp\": \"' + event.timestamp + '\",  \"UserId\": \"' + event.distinct_id + '\"}]')
         
+	//fetch with retry
+	const fetch_retry = async (url, options, n) => {
+	    let error;
+	    for (let i = 0; i < n; i++) {
+
+		try {
+		    response = await fetch(url, options);
+		    if (response === 200) {
+		       return response;
+		    }else{
+		       throw new Error(response)
+		    }
+		} catch (err) {
+		   error = err;     
+		   //1.           
+		   if (i + 1 === n) throw err;
+		}
+	    }
+	    throw error;
+	};
+	let response = fetch_retry(
+		request_url,
+                    {
+                        headers: {
+                            'accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                    body: data                     
+                    },
+		    method_type
+		, 10);
+	
 	//fetch
-        await fetchWithRetry(
+        /*await fetch(
                     url,
                     {
+			method: method_type,
                         headers: {
                             'accept': 'application/json',
                             'Content-Type': 'application/json'
                         },
                     body: data
                         
-                    },
-		    method_type, 5
+                    }
                 ).then((response) => response.json())
 				//Then with the data from the response in JSON...
 				.then((data) => {
@@ -80,7 +112,7 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 				//Then with the error genereted...
 				.catch((error) => {
 				  console.error('Error:', error);
-				})
+				})*/
 	    
     } else {
         
