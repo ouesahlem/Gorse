@@ -68,15 +68,38 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 	    retryOn: [419, 503, 504],
 	}
 	
-	const fetch = fetchBuilder(originalFetch, options)
+	//fetch with retry
+	function fetchRetry(url, options, retries = 3) {
+	  // Return a fetch request
+	  return fetch(
+		  url,
+                    {
+			method: method_type,
+                        headers: {
+                            'accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                    body: data
+                        
+                    }
+	  ).then(res => {
+	    // check if successful. If so, return the response transformed to json
+	    if (res.ok) return res.json()
+	    // if retries > 0, return a call to fetchRetry
+	    if (retries > 0) {
+		return fetchRetry(url, options, retries - 1)
+	      //else, throw error
+	      } else {
+		throw new Error(res)
+	      }
+	    })
+	    .catch(console.error)
+	}
 	
 	//fetch
-        await fetch(
+        /*await fetch(
                     url,
                     {
-		    	retryOn: (attempt: number, retries: number, error: Error | null, response: Response | null): boolean => (
-				attempt < retries && (!!error || !response || response.status >= 500)
-		    	),
 			method: method_type,
                         headers: {
                             'accept': 'application/json',
@@ -93,7 +116,7 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 				//Then with the error genereted...
 				.catch((error) => {
 				  console.error('Error:', error);
-				})
+				})*/
 	    
     } else {
         
