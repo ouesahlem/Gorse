@@ -75,8 +75,8 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 				    body: data
 
 				    }
-				)
-			if (response.status != 419 && response.status != 503 && response.status != 504]) {
+			)
+			if (response.status != 419 && response.status != 503 && response.status != 504) {
 				const results = await response.json()
 				return results
 				if (response.status===200){
