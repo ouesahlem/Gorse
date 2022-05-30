@@ -63,6 +63,7 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 	
 	//fetch
 	for (let i = 0; i < n; i++) {
+		console.log('Try n°', i)
 		try {
 			const response = await fetch(
 				    url,
@@ -76,9 +77,10 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 
 				    }
 			)
-			if (response.status != 419 && response.status != 503 && response.status != 504) {
+			if (response.status === 200 || response.status === 419 || response.status === 503 || response.status === 504) {
 				const results = await response.json()
 				return results
+				console.log('I am trying')
 				if (response.status===200){
 					console.log('Success:', response.statusText)
 				} else {
