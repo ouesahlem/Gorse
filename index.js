@@ -74,8 +74,8 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 
 			    }
 			)
-		const data = await response.json()
-		return data
+		const results = await response.json()
+		return results
 		if (response.status === 200) {
 			console.log('Success:', response.statusText)
 		}
