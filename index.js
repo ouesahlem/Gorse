@@ -1,7 +1,6 @@
 import { PluginMeta, PluginEvent, CacheExtension } from '@posthog/plugin-scaffold'
 import type { RequestInfo, RequestInit, Response } from 'node-fetch'
-import originalFetch from 'isomorphic-fetch'
-import fetchBuilder from 'fetch-retry-ts'
+import { useEffect, useState } from "react"
 import { createBuffer } from '@posthog/plugin-contrib'
 import { RetryError } from '@posthog/plugin-scaffold'
 
@@ -62,32 +61,34 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 	const method_type = config.MethodType
 	const data = new String('[{\"Comment\": \"\",  \"FeedbackType\": \"' + event.event + '\",  \"ItemId\": \"' + event.properties?.item_id + '\",  \"Timestamp\": \"' + event.timestamp + '\",  \"UserId\": \"' + event.distinct_id + '\"}]')
 	
-	const retries = 3
-	let error
-	
-	for (let i = 0; i < retries; i++) {
-		await fetch(
-                    url,
-                    {
-			method: method_type,
-                        headers: {
-                            'accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                    body: data
-                        
-                    }
-                ).then((response) => response.json())
-				//Then with the data from the response in JSON...
-				.then((data) => {
-				console.log('Success:', data);
-				})
-				//Then with the error genereted...
-				.catch((error) => {
-				  if (i + 1 === retries) console.error('Error:', error);
-				})
+	export const Timeout = (time) => {
+		let controller = new AbortController()
+		setTimeout(() => controller.abort(), time * 1000)
+		return controller
 	}
-	throw error
+
+	//update
+  	useEffect(() => {
+		const response = await fetch(
+		    url,
+		    {
+			method: method_type,
+			headers: {
+			    'accept': 'application/json',
+			    'Content-Type': 'application/json'
+			},
+			body: data
+			signal: Timeout(10).signal
+		    }
+		).then(function(response) {
+			      console.log(response.status)     //=> number 100–599
+			      console.log(response.statusText) //=> String
+			      console.log(response.url)        //=> String
+			}, function(error) {
+			      console.log(error.message) //=> String
+			})
+	    return response
+	}
 	    
     } else {
         
