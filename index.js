@@ -59,28 +59,37 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 	const url = config.RequestURL
 	const method_type = config.MethodType
 	const data = new String('[{\"Comment\": \"\",  \"FeedbackType\": \"' + event.event + '\",  \"ItemId\": \"' + event.properties?.item_id + '\",  \"Timestamp\": \"' + event.timestamp + '\",  \"UserId\": \"' + event.distinct_id + '\"}]')
-        
+        const n = 3
+	
 	//fetch
-	try {
-		const response = await fetch(
-			    url,
-			    {
-				method: method_type,
-				headers: {
-				    'accept': 'application/json',
-				    'Content-Type': 'application/json'
-				},
-			    body: data
+	for (let i = 0; i < n; i++) {
+		try {
+			const response = await fetch(
+				    url,
+				    {
+					method: method_type,
+					headers: {
+					    'accept': 'application/json',
+					    'Content-Type': 'application/json'
+					},
+				    body: data
 
-			    }
-			)
-		const results = await response.json()
-		return results
-		if (response.status === 200) {
-			console.log('Success:', response.statusText)
+				    }
+				)
+			if (response.status != 419 && response.status != 503 && response.status != 504]) {
+				const results = await response.json()
+				return results
+				if (response.status===200){
+					console.log('Success:', response.statusText)
+				} else {
+					catch (error) {
+						console.error('Error:', error)
+					}
+				}
+			}
+		} catch (error) {
+			if (i + 1 === n) console.error('Error:', error)
 		}
-	} catch (error) {
-    		console.error('Error:', error)
 	}
     } else {
         
