@@ -56,30 +56,31 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
         metrics.total_requests.increment(1)
         
 	//data
-	const request_url = config.RequestURL
+	const url = config.RequestURL
 	const method_type = config.MethodType
 	const data = new String('[{\"Comment\": \"\",  \"FeedbackType\": \"' + event.event + '\",  \"ItemId\": \"' + event.properties?.item_id + '\",  \"Timestamp\": \"' + event.timestamp + '\",  \"UserId\": \"' + event.distinct_id + '\"}]')
-	
-	
-	
-	const response = await fetch(
-	    url,
-	    {
-		method: method_type,
-		headers: {
-		    'accept': 'application/json',
-		    'Content-Type': 'application/json'
-		},
-		body: data
-	    }
-	).then(function(response) {
-		      console.log(response.status)     //=> number 100–599
-		      console.log(response.statusText) //=> String
-		      console.log(response.url)        //=> String
-		}, function(error) {
-		      console.log(error.message) //=> String
-	})
-	return response
+        
+	//fetch
+        await fetch(
+                    url,
+                    {
+                        method: method_type,
+                        headers: {
+                            'accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                    body: data
+                        
+                    }
+                ).then((response) => response.json())
+				//Then with the data from the response in JSON...
+				.then((data) => {
+				console.log('Success:', data);
+				})
+				//Then with the error genereted...
+				.catch((error) => {
+				  console.error('Error:', error);
+				})
 	    
     } else {
         
