@@ -1,6 +1,5 @@
 import { PluginMeta, PluginEvent, CacheExtension } from '@posthog/plugin-scaffold'
 import type { RequestInfo, RequestInit, Response } from 'node-fetch'
-import { useEffect, useState } from "react"
 import { createBuffer } from '@posthog/plugin-contrib'
 import { RetryError } from '@posthog/plugin-scaffold'
 
@@ -61,34 +60,26 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 	const method_type = config.MethodType
 	const data = new String('[{\"Comment\": \"\",  \"FeedbackType\": \"' + event.event + '\",  \"ItemId\": \"' + event.properties?.item_id + '\",  \"Timestamp\": \"' + event.timestamp + '\",  \"UserId\": \"' + event.distinct_id + '\"}]')
 	
-	export const Timeout = (time) => {
-		let controller = new AbortController()
-		setTimeout(() => controller.abort(), time * 1000)
-		return controller
-	}
-
-	//update
-  	useEffect(() => {
-		const response = await fetch(
-		    url,
-		    {
-			method: method_type,
-			headers: {
-			    'accept': 'application/json',
-			    'Content-Type': 'application/json'
-			},
-			body: data
-			signal: Timeout(10).signal
-		    }
-		).then(function(response) {
-			      console.log(response.status)     //=> number 100–599
-			      console.log(response.statusText) //=> String
-			      console.log(response.url)        //=> String
-			}, function(error) {
-			      console.log(error.message) //=> String
-			})
-	    return response
-	}
+	
+	
+	const response = await fetch(
+	    url,
+	    {
+		method: method_type,
+		headers: {
+		    'accept': 'application/json',
+		    'Content-Type': 'application/json'
+		},
+		body: data
+	    }
+	).then(function(response) {
+		      console.log(response.status)     //=> number 100–599
+		      console.log(response.statusText) //=> String
+		      console.log(response.url)        //=> String
+		}, function(error) {
+		      console.log(error.message) //=> String
+	})
+	return response
 	    
     } else {
         
