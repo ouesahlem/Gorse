@@ -61,27 +61,27 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 	const data = new String('[{\"Comment\": \"\",  \"FeedbackType\": \"' + event.event + '\",  \"ItemId\": \"' + event.properties?.item_id + '\",  \"Timestamp\": \"' + event.timestamp + '\",  \"UserId\": \"' + event.distinct_id + '\"}]')
         
 	//fetch
-        await fetch(
-                    url,
-                    {
-                        method: method_type,
-                        headers: {
-                            'accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                    body: data
-                        
-                    }
-                ).then((response) => response.json())
-				//Then with the data from the response in JSON...
-				.then((data) => {
-				console.log('Success:', data);
-				})
-				//Then with the error genereted...
-				.catch((error) => {
-				  console.error('Error:', error);
-				})
-	    
+	try {
+		const response = await fetch(
+			    url,
+			    {
+				method: method_type,
+				headers: {
+				    'accept': 'application/json',
+				    'Content-Type': 'application/json'
+				},
+			    body: data
+
+			    }
+			)
+		const data = await response.json()
+		return data
+		if (response.status === 200) {
+			console.log('Success:', response.statusText)
+		}
+	} catch (error) {
+    		console.log(error)
+	}
     } else {
         
         return
