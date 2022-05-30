@@ -80,7 +80,7 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 			console.log('Success:', response.statusText)
 		}
 	} catch (error) {
-    		console.log(error)
+    		console.error('Error:', error)
 	}
     } else {
         
