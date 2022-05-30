@@ -82,9 +82,7 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
 				if (response.status===200){
 					console.log('Success:', response.statusText)
 				} else {
-					catch (error) {
-						console.error('Error:', error)
-					}
+					throw new Error(response)
 				}
 			}
 		} catch (error) {
