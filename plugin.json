@@ -1,5 +1,5 @@
 {
-    "name": "Gorse Export Data Plugin",
+    "name": "Gorse Export Plugin",
     "url": "https://github.com/ouesahlem/Gorse",
     "description": "Export PostHog events into Gorse",
     "main": "index.js",
