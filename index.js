@@ -22,8 +22,6 @@ interface SendEventsPluginMeta extends PluginMeta {
     //and configured via the PostHog interface.
     config: {
         eventsToInclude: string
-	RequestURL: string
-	MethodType: string
     },
     
     //global object is used for sharing functionality between setupPlugin 
@@ -55,42 +53,39 @@ async function sendEventToGorse(event: PluginEvent, meta: SendEventsPluginMeta) 
         //increment the number of requests
         metrics.total_requests.increment(1)
         
-	//data
-	const url = config.RequestURL
-	const method_type = config.MethodType
-	const data = new String('[{\"Comment\": \"\",  \"FeedbackType\": \"' + event.event + '\",  \"ItemId\": \"' + event.properties?.item_id + '\",  \"Timestamp\": \"' + event.timestamp + '\",  \"UserId\": \"' + event.distinct_id + '\"}]')
-        const n = 3
-	
-	//fetch
-	for (let i = 0; i < n; i++) {
-		console.log('Try n°', i)
-		try {
-			const response = await fetch(
-				    url,
-				    {
-					method: method_type,
-					headers: {
-					    'accept': 'application/json',
-					    'Content-Type': 'application/json'
-					},
-				    body: data
+        //fetch
+        const response = await fetch(
+            `http://51.89.15.39:8087/api/feedback`,
+            {
+                headers: {
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                        'Comment': '',
+                        'FeedbackType' : event.event,
+                        'ItemId' : event.properties?.item_id,
+                        'Timestamp' : event.properties?.timestamp,
+                        'UserId' :  event.properties?.user_id
+                })
 
-				    }
-			)
-			if (response.status === 200 || response.status === 419 || response.status === 503 || response.status === 504) {
-				const results = await response.json()
-				return results
-				console.log('I am trying')
-				if (response.status===200){
-					console.log('Success:', response.statusText)
-				} else {
-					throw new Error(response)
-				}
-			}
-		} catch (error) {
-			if (i + 1 === n) console.error('Error:', error)
-		}
-	}
+            },
+            'PUT'
+        )
+        
+        //Condition: throws an error if the response status is not 'ok'.
+        if (!statusOk(response)) {
+            
+            //increment the number of errors.
+            metrics.errors.increment(1)
+            throw new Error(`Not a 200 response. Response: ${response.status} (${response})`)
+            
+        } else {
+            
+            console.log(`success`)
+            
+        }
+        
     } else {
         
         return
@@ -104,24 +99,73 @@ export async function setupPlugin(meta: SendEventsPluginMeta) {
     verifyConfig(meta)
     const { global } = meta
     global.buffer = createBuffer({
-        limit: 1 * 1024 * 1024, // 1 MB
+        limit: 5 * 1024 * 1024, // 1 MB
         timeoutSeconds: 1,
-	onFlush: async (events) => {
-	    const timer1 = new Date().getTime()
-	    for (const event of events) {
-		    await sendEventToGorse(event, meta)
-	    }
-	    const timer2 = new Date().getTime()
-	    console.log('onFlush took', (timer2-timer1)/1000, 'seconds')
-    	}
+        onFlush: async (events) => {
+            for (const event of events) {
+                
+               var data=     JSON.stringify({ 
+                                    'FeedbackType' : event.event,
+                                    'UserId' :  event.distinct_id,
+                                    'ItemId' : event.properties?.item_id,
+                                    'Timestamp' : event.properties?.timestamp,
+                                    'Comment': ''
+                                })
+                
+                console.log(data)
+                console.log(event.event)
+                console.log(event.properties?.item_id) 
+                console.log(event.timestamp) 
+                console.log(event.distinct_id)
+                
+                /////////////////////////////////////
+                //////////fetchWithRetry/////////////
+                const response = await fetchWithRetry(
+                    'http://51.89.15.39:8087/api/feedback',
+                    {
+                        headers: {
+                            'accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: [data]
+                    },
+                    'PUT'
+                )
+                console.log(response.status)
+                console.log(response.statusText)
+                console.log(response.url)
+                /////////////////////////////////////
+                /////////////////////////////////////
+                /*const response = await fetch(
+                    'http://51.89.15.39:8087/api/feedback',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: [data],
+                        
+                    }
+                ).then(function(response) {
+                      console.log(response.status)     //=> number 100–599
+                      console.log(response.statusText) //=> String
+                      console.log(response.url)        //=> String
+                }, function(error) {
+                      console.log(error.message) //=> String
+                })*/
+                //console.log(response.status)
+                //const content = await response.json()
+                //console.log(content)
+                ////////////////////////////////////////
+                //await sendEventToGorse(event, meta)
+            }
+        },
     })
 }
 
 //onEvent function takes an event and an object of type PluginMeta as parameters to read an event but not to modify it.
-export async function onEvent(event: PluginEvent, { global } : SendEventsPluginMeta) {
-    if (!global.buffer) {
-        throw new Error(`there is no buffer. setup must have failed, cannot process event: ${event.event}`)
-    }
+export async function onEvent(event: PluginEvent, { global }: SendEventsPluginMeta) {
     const eventSize = JSON.stringify(event).length
     global.buffer.add(event, eventSize)
 }
@@ -129,4 +173,9 @@ export async function onEvent(event: PluginEvent, { global } : SendEventsPluginM
 //teardownPlugin is ran when a app VM is destroyed, It can be used to flush/complete any operations that may still be pending.
 export function teardownPlugin({ global }: SendEventsPluginMeta) {
     global.buffer.flush()
+}
+
+//Test that the http status code is 200
+function statusOk(res: Response) {
+    return String(res.status)[0] === '2'
 }
